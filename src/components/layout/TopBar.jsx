@@ -66,26 +66,22 @@ export const TopBar = () => {
               width: compact ? '8px' : '10px',
               height: compact ? '8px' : '10px',
               backgroundColor: accentColor,
-              transition: 'all 0.4s ease',
+              borderRadius: '2px',
             }}
-            className="rounded-sm"
           />
           <span
             style={{
-              fontFamily: mode === 'software' ? '"JetBrains Mono", monospace' : '"Syne", sans-serif',
-              fontSize: compact ? '13px' : '15px',
-              color: '#E8EAF0',
-              transition: 'all 0.4s ease',
+              fontFamily: '"Inter", sans-serif',
+              fontWeight: 700,
+              fontSize: compact ? '13px' : '14px',
+              letterSpacing: '0.12em',
+              color: 'var(--text-primary)',
+              textTransform: 'uppercase',
             }}
-            className="font-bold tracking-widest uppercase group-hover:opacity-70"
+            className="group-hover:opacity-60 transition-opacity"
           >
             Raskin Verma
           </span>
-          {!compact && (
-            <span className="hidden md:inline text-[10px] font-mono text-text-muted border border-border px-1.5 py-0.5 opacity-70">
-              {mode === 'software' ? 'SYS_ENG' : '3D_CGI'}
-            </span>
-          )}
         </a>
 
         {/* Desktop nav */}

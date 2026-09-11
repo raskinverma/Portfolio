@@ -1,201 +1,246 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useMode } from '../../context/ModeContext';
 import { ArrowDown, ArrowRight } from 'lucide-react';
 import { GithubIcon } from '../ui/Icons';
 
-// Typewriter hook — only plays when mounted with target string
-const useTypewriter = (text, speed = 65, active = true) => {
-  const [displayed, setDisplayed] = useState('');
+/* Typewriter — plays on mount */
+const useTypewriter = (text, speed = 60) => {
+  const [shown, setShown] = useState('');
   useEffect(() => {
-    if (!active) { setDisplayed(text); return; }
-    setDisplayed('');
+    setShown('');
     let i = 0;
     const id = setInterval(() => {
-      if (i < text.length) {
-        setDisplayed(text.slice(0, i + 1));
-        i++;
-      } else {
-        clearInterval(id);
-      }
+      if (i < text.length) { setShown(text.slice(0, ++i)); }
+      else clearInterval(id);
     }, speed);
     return () => clearInterval(id);
-  }, [text, active]);
-  return displayed;
+  }, [text]);
+  return shown;
+};
+
+/* Split background — left half SW green, right half 3D amber,
+   mouse position gently shifts the divider */
+const SplitBackground = () => {
+  const [mx, setMx] = useState(0.5);
+  const { mode } = useMode();
+  const rafRef = useRef(null);
+  const targetRef = useRef(0.5);
+
+  useEffect(() => {
+    const onMove = (e) => {
+      targetRef.current = e.clientX / window.innerWidth;
+    };
+    window.addEventListener('mousemove', onMove);
+
+    const animate = () => {
+      setMx((prev) => {
+        const t = targetRef.current;
+        return prev + (t - prev) * 0.04;
+      });
+      rafRef.current = requestAnimationFrame(animate);
+    };
+    rafRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      cancelAnimationFrame(rafRef.current);
+    };
+  }, []);
+
+  const pct = Math.round(mx * 100);
+
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {/* Left half — SW green glow */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: `radial-gradient(ellipse at ${pct * 0.6}% 40%, rgba(94,255,158,0.09) 0%, transparent 65%)`,
+          transition: 'background 0.05s linear',
+        }}
+      />
+      {/* Right half — 3D amber glow */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: `radial-gradient(ellipse at ${40 + pct * 0.6}% 55%, rgba(255,184,77,0.08) 0%, transparent 65%)`,
+          transition: 'background 0.05s linear',
+        }}
+      />
+      {/* Subtle vertical divider line */}
+      <div
+        style={{
+          position: 'absolute',
+          top: '15%',
+          bottom: '15%',
+          left: `${pct}%`,
+          width: '1px',
+          background: 'linear-gradient(to bottom, transparent, rgba(255,255,255,0.06) 30%, rgba(255,255,255,0.06) 70%, transparent)',
+          transform: 'translateX(-50%)',
+        }}
+      />
+    </div>
+  );
 };
 
 export const Hero = () => {
   const { mode, toggleMode } = useMode();
   const isSW = mode === 'software';
+  const typed = useTypewriter('Raskin Verma');
 
-  const headline = useTypewriter('Raskin Verma', 70, isSW);
-
-  const accentColor = isSW ? '#4ADE80' : '#F59E0B';
-  const accentDim = isSW ? 'rgba(74,222,128,0.08)' : 'rgba(245,158,11,0.08)';
-  const headingFont = isSW ? '"JetBrains Mono", monospace' : '"Syne", sans-serif';
-
-  const metrics = [
-    { label: 'Competition', value: 'Aerothon 2nd · ISRO 4th' },
-    { label: 'Languages', value: 'C++ · Python · SQL' },
-    { label: 'Systems & Vision', value: 'ROS · OpenCV · Sockets' },
-    { label: 'CGPA', value: '9.44 / 10 (2028)' },
-  ];
+  const accent = isSW ? '#5eff9e' : '#ffb84d';
+  const accentDim = isSW ? 'rgba(94,255,158,0.10)' : 'rgba(255,184,77,0.10)';
 
   return (
     <section
       id="hero"
-      className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden px-4"
+      className="relative min-h-screen flex flex-col items-center justify-center px-4"
+      style={{ overflow: 'hidden' }}
     >
-      {/* Centered content block */}
-      <div className="relative z-10 flex flex-col items-center text-center max-w-3xl mx-auto w-full pt-24 pb-12">
+      {/* Split ambient background */}
+      <SplitBackground />
+
+      {/* Content — always centered, same structure both modes */}
+      <div
+        className="relative z-10 flex flex-col items-center text-center w-full max-w-2xl mx-auto"
+        style={{ paddingTop: '10vh', paddingBottom: '8vh', animation: 'fadeUp 0.7s ease both' }}
+      >
 
         {/* Status badge */}
         <div
-          className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-mono mb-10 border"
+          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs mb-12"
           style={{
-            backgroundColor: accentDim,
-            borderColor: `${accentColor}33`,
-            color: accentColor,
-            transition: 'all 0.5s ease',
+            background: accentDim,
+            border: `1px solid ${accent}30`,
+            color: accent,
+            fontFamily: '"JetBrains Mono", monospace',
+            letterSpacing: '0.04em',
           }}
         >
           <span
-            className="w-1.5 h-1.5 rounded-full"
-            style={{ backgroundColor: accentColor, animation: 'pulse 2s infinite' }}
+            style={{
+              width: 6, height: 6, borderRadius: '50%',
+              backgroundColor: accent,
+              animation: 'pulse 2s infinite',
+              display: 'inline-block',
+            }}
           />
           {isSW
-            ? 'CS @ IIIT Dharwad · Systems, Vision & Web'
+            ? 'CS @ IIIT Dharwad · 9.44 CGPA'
             : '3D · CGI · Hardware Prototyping'}
         </div>
 
-        {/* Hero name — centered + typewriter in SW mode */}
+        {/* Name — typewriter in both modes */}
         <h1
           style={{
-            fontFamily: headingFont,
-            fontSize: 'clamp(2.8rem, 8vw, 6rem)',
+            fontFamily: '"Inter", sans-serif',
+            fontSize: 'clamp(3rem, 9vw, 6.5rem)',
             fontWeight: 800,
-            letterSpacing: isSW ? '-0.02em' : '-0.03em',
-            color: '#F3F4F6',
-            lineHeight: 1.05,
-            transition: 'font-family 0.4s ease',
+            letterSpacing: '-0.04em',
+            lineHeight: 1,
+            color: 'var(--text-primary)',
+            marginBottom: '1.25rem',
           }}
-          className="mb-4 relative"
         >
           {isSW ? (
             <>
-              <span style={{ color: accentColor, marginRight: '0.2em' }}>{'>'}</span>
-              {headline}
+              <span style={{ color: accent, marginRight: '0.15em' }}>&gt;</span>
+              {typed}
               <span
-                className="inline-block w-[0.12em] h-[0.9em] ml-1 align-middle"
                 style={{
-                  backgroundColor: accentColor,
+                  display: 'inline-block',
+                  width: '0.08em',
+                  height: '0.8em',
+                  marginLeft: '0.08em',
+                  verticalAlign: '-0.02em',
+                  backgroundColor: accent,
                   animation: 'blink 1s step-end infinite',
-                  verticalAlign: '-0.05em',
                 }}
               />
             </>
           ) : (
-            <span style={{ color: '#F3F4F6' }}>Raskin Verma</span>
+            'Raskin Verma'
           )}
         </h1>
 
         {/* Tagline */}
         <p
-          className="text-base sm:text-lg mb-10 leading-relaxed max-w-xl"
           style={{
-            color: 'rgba(232,234,240,0.55)',
-            fontFamily: isSW ? '"JetBrains Mono", monospace' : '"Inter", sans-serif',
-            fontSize: isSW ? '0.92rem' : '1.05rem',
-            transition: 'all 0.4s ease',
+            fontFamily: '"Inter", sans-serif',
+            fontSize: 'clamp(0.9rem, 2vw, 1.1rem)',
+            color: 'var(--text-muted)',
+            lineHeight: 1.7,
+            maxWidth: '520px',
+            marginBottom: '2.5rem',
           }}
         >
           {isSW
-            ? '// Building autonomous systems, computer vision pipelines, and graph-native RAG — from ISRO drone comps to national aerospace hackathons.'
-            : 'Commercial CGI pipelines for Dubai clients, custom hardware CAD for quadcopter payloads, and physics-based procedural simulations.'}
+            ? 'Systems engineering, computer vision, and graph-native RAG — from ISRO drone competitions to national aerospace hackathons.'
+            : 'Full CGI pipelines for Dubai clients, custom hardware CAD for autonomous quadcopters, physics-based procedural simulations.'}
         </p>
 
-        {/* CTA buttons — centered */}
-        <div className="flex flex-wrap items-center justify-center gap-4 mb-16">
+        {/* CTAs — centered */}
+        <div className="flex flex-wrap items-center justify-center gap-3">
           <a
             href="#projects"
-            className="flex items-center gap-2 px-6 py-3 font-semibold text-sm rounded-full transition-all"
+            className="flex items-center gap-2 font-semibold rounded-full transition-opacity hover:opacity-80"
             style={{
-              backgroundColor: accentColor,
+              background: accent,
               color: '#000',
-              fontFamily: isSW ? '"JetBrains Mono", monospace' : '"Syne", sans-serif',
-              boxShadow: `0 0 32px ${accentColor}35`,
-              transition: 'all 0.4s ease',
+              fontSize: '0.875rem',
+              padding: '0.75rem 1.75rem',
+              boxShadow: `0 0 40px ${accent}30`,
             }}
           >
             {isSW ? 'View Projects' : 'See Renders'}
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight style={{ width: 15, height: 15 }} />
           </a>
 
           <a
             href="https://github.com/raskinverma"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 px-5 py-3 font-mono text-sm rounded-full border transition-all text-text-muted hover:text-text-primary"
+            className="flex items-center gap-2 rounded-full transition-opacity hover:opacity-80"
             style={{
-              borderColor: 'rgba(255,255,255,0.1)',
-              background: 'rgba(255,255,255,0.03)',
-              backdropFilter: 'blur(8px)',
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.09)',
+              color: 'var(--text-primary)',
+              fontSize: '0.875rem',
+              padding: '0.75rem 1.5rem',
+              backdropFilter: 'blur(10px)',
             }}
           >
-            <GithubIcon className="w-4 h-4" />
-            github.com/raskinverma
+            <GithubIcon style={{ width: 15, height: 15 }} />
+            GitHub
           </a>
 
-          {/* Mode switch button — minimal */}
           <button
             onClick={toggleMode}
-            className="px-5 py-3 font-mono text-xs rounded-full border transition-all"
+            className="rounded-full transition-opacity hover:opacity-80"
             style={{
-              borderColor: `${accentColor}33`,
-              color: accentColor,
-              background: accentDim,
+              background: 'transparent',
+              border: `1px solid ${accent}35`,
+              color: accent,
+              fontSize: '0.8rem',
+              padding: '0.75rem 1.5rem',
+              cursor: 'pointer',
             }}
           >
-            {isSW ? '→ Switch to 3D Mode' : '→ Switch to SW Mode'}
+            {isSW ? '→ 3D Mode' : '→ SW Mode'}
           </button>
         </div>
 
-        {/* Metrics strip — glass cards */}
-        <div className="w-full grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {metrics.map((m) => (
-            <div
-              key={m.label}
-              className="flex flex-col items-center justify-center p-4 rounded-xl text-center border"
-              style={{
-                background: 'rgba(255,255,255,0.03)',
-                backdropFilter: 'blur(12px)',
-                WebkitBackdropFilter: 'blur(12px)',
-                borderColor: 'rgba(255,255,255,0.07)',
-                transition: 'all 0.4s ease',
-              }}
-            >
-              <span
-                className="text-[10px] font-mono uppercase tracking-widest mb-1"
-                style={{ color: 'rgba(255,255,255,0.3)' }}
-              >
-                {m.label}
-              </span>
-              <span
-                className="text-xs font-semibold"
-                style={{
-                  fontFamily: isSW ? '"JetBrains Mono", monospace' : '"Syne", sans-serif',
-                  color: '#E8EAF0',
-                }}
-              >
-                {m.value}
-              </span>
-            </div>
-          ))}
-        </div>
-
         {/* Scroll hint */}
-        <div className="mt-14 flex flex-col items-center gap-2 opacity-30 hover:opacity-60 transition-opacity">
-          <span className="text-[11px] font-mono text-text-muted">Scroll to explore</span>
-          <ArrowDown className="w-4 h-4 text-text-muted animate-bounce" />
+        <div
+          className="flex flex-col items-center gap-1.5"
+          style={{ marginTop: '5rem', opacity: 0.25 }}
+        >
+          <span style={{ fontSize: '11px', fontFamily: '"JetBrains Mono", monospace', color: 'var(--text-muted)', letterSpacing: '0.08em' }}>
+            SCROLL
+          </span>
+          <ArrowDown style={{ width: 14, height: 14, color: 'var(--text-muted)', animation: 'bounce 1.5s infinite' }} />
         </div>
       </div>
     </section>

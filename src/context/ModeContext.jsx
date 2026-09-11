@@ -1,70 +1,42 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const ModeContext = createContext();
 
 export const ModeProvider = ({ children }) => {
   const [mode, setModeState] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('raskin_portfolio_mode');
-      if (saved === 'software' || saved === 'visual') return saved;
-    }
-    return 'software';
+    try { const s = localStorage.getItem('rv_mode'); return s === 'visual' ? 'visual' : 'software'; }
+    catch { return 'software'; }
   });
 
-  // Transition overlay state
-  const [transitioning, setTransitioning] = useState(false);
-  const [transitionOrigin, setTransitionOrigin] = useState({ x: '50%', y: '50%' });
-  const [nextMode, setNextMode] = useState(null);
-  const pendingRef = useRef(null);
+  // Wipe state: null | 'start' | 'done'
+  const [wipeActive, setWipeActive] = useState(false);
+  const [wipeDir, setWipeDir] = useState(1); // 1 = left→right (to 3D), -1 = right→left (to SW)
 
   useEffect(() => {
-    const body = document.body;
-    if (mode === 'visual') {
-      body.classList.add('mode-visual');
-    } else {
-      body.classList.remove('mode-visual');
-    }
-    localStorage.setItem('raskin_portfolio_mode', mode);
+    document.body.classList.toggle('mode-visual', mode === 'visual');
+    try { localStorage.setItem('rv_mode', mode); } catch {}
   }, [mode]);
 
-  const setMode = (newMode, originX, originY) => {
-    if (newMode === mode || transitioning) return;
+  const toggleMode = () => {
+    const next = mode === 'software' ? 'visual' : 'software';
+    setWipeDir(next === 'visual' ? 1 : -1);
+    setWipeActive(true);
 
-    // Capture click origin for radial wipe
-    const ox = originX ?? '50%';
-    const oy = originY ?? '50%';
-
-    setTransitionOrigin({ x: ox, y: oy });
-    setNextMode(newMode);
-    setTransitioning(true);
-
-    // After overlay covers screen, swap mode
-    pendingRef.current = setTimeout(() => {
-      setModeState(newMode);
-      // After mode applied, let overlay recede
-      setTimeout(() => {
-        setTransitioning(false);
-        setNextMode(null);
-      }, 350);
-    }, 300);
-  };
-
-  const toggleMode = (e) => {
-    const rect = e?.currentTarget?.getBoundingClientRect?.();
-    const x = rect ? `${rect.left + rect.width / 2}px` : '50%';
-    const y = rect ? `${rect.top + rect.height / 2}px` : '50%';
-    setMode(mode === 'software' ? 'visual' : 'software', x, y);
+    // Swap mode at midpoint of wipe (200ms)
+    setTimeout(() => setModeState(next), 200);
+    // Remove wipe after full animation (460ms)
+    setTimeout(() => setWipeActive(false), 460);
   };
 
   return (
-    <ModeContext.Provider value={{ mode, setMode, toggleMode, transitioning, transitionOrigin, nextMode }}>
+    <ModeContext.Provider value={{ mode, toggleMode, wipeActive, wipeDir }}>
       {children}
     </ModeContext.Provider>
   );
 };
 
 export const useMode = () => {
-  const context = useContext(ModeContext);
-  if (!context) throw new Error('useMode must be used within a ModeProvider');
-  return context;
+  const ctx = useContext(ModeContext);
+  if (!ctx) throw new Error('useMode outside ModeProvider');
+  return ctx;
 };
