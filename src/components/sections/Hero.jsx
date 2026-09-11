@@ -1,177 +1,202 @@
 import React, { useState, useEffect } from 'react';
 import { useMode } from '../../context/ModeContext';
-import { Terminal, ArrowRight, Box, Sparkles, Activity, Layers } from 'lucide-react';
+import { ArrowDown, ArrowRight } from 'lucide-react';
 import { GithubIcon } from '../ui/Icons';
+
+// Typewriter hook — only plays when mounted with target string
+const useTypewriter = (text, speed = 65, active = true) => {
+  const [displayed, setDisplayed] = useState('');
+  useEffect(() => {
+    if (!active) { setDisplayed(text); return; }
+    setDisplayed('');
+    let i = 0;
+    const id = setInterval(() => {
+      if (i < text.length) {
+        setDisplayed(text.slice(0, i + 1));
+        i++;
+      } else {
+        clearInterval(id);
+      }
+    }, speed);
+    return () => clearInterval(id);
+  }, [text, active]);
+  return displayed;
+};
 
 export const Hero = () => {
   const { mode, toggleMode } = useMode();
+  const isSW = mode === 'software';
 
-  // Clean typewriter effect for Mode 1
-  const [typedText, setTypedText] = useState('');
-  const fullText = 'Raskin Verma';
+  const headline = useTypewriter('Raskin Verma', 70, isSW);
 
-  useEffect(() => {
-    if (mode === 'software') {
-      let current = '';
-      let index = 0;
-      const interval = setInterval(() => {
-        if (index < fullText.length) {
-          current += fullText.charAt(index);
-          setTypedText(current);
-          index++;
-        } else {
-          clearInterval(interval);
-        }
-      }, 70);
-      return () => clearInterval(interval);
-    } else {
-      setTypedText(fullText);
-    }
-  }, [mode]);
+  const accentColor = isSW ? '#4ADE80' : '#F59E0B';
+  const accentDim = isSW ? 'rgba(74,222,128,0.08)' : 'rgba(245,158,11,0.08)';
+  const headingFont = isSW ? '"JetBrains Mono", monospace' : '"Syne", sans-serif';
+
+  const metrics = [
+    { label: 'Competition', value: 'Aerothon 2nd · ISRO 4th' },
+    { label: 'Languages', value: 'C++ · Python · SQL' },
+    { label: 'Systems & Vision', value: 'ROS · OpenCV · Sockets' },
+    { label: 'CGPA', value: '9.44 / 10 (2028)' },
+  ];
 
   return (
-    <section className="relative pt-32 pb-16 sm:pt-40 sm:pb-24 overflow-hidden">
-      <div
-        className={`mx-auto px-4 sm:px-6 lg:px-8 transition-all duration-300 ${
-          mode === 'software' ? 'max-w-content-sw' : 'max-w-content-3d'
-        }`}
-      >
-        {mode === 'software' ? (
-          /* Mode 1: Software & Systems Hero */
-          <div className="space-y-6">
-            {/* Terminal Status Prompt Bar */}
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-surface border border-border text-xs font-mono text-text-muted">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span>SYS_KERNEL // HOST: IIIT_DHARWAD.LOCAL</span>
-              <span className="text-border">|</span>
-              <span className="text-emerald-400">STATUS: ONLINE</span>
-            </div>
+    <section
+      id="hero"
+      className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden px-4"
+    >
+      {/* Centered content block */}
+      <div className="relative z-10 flex flex-col items-center text-center max-w-3xl mx-auto w-full pt-24 pb-12">
 
-            {/* Main Terminal Heading */}
-            <div className="space-y-3">
-              <div className="flex items-center text-3xl sm:text-5xl md:text-6xl font-mono font-bold tracking-tight text-text-primary">
-                <span className="text-emerald-400 mr-2 sm:mr-3">&gt;</span>
-                <span>{typedText}</span>
-                <span className="inline-block w-3 sm:w-4 h-8 sm:h-12 bg-emerald-400 ml-1 animate-blink" />
-              </div>
+        {/* Status badge */}
+        <div
+          className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[11px] font-mono mb-10 border"
+          style={{
+            backgroundColor: accentDim,
+            borderColor: `${accentColor}33`,
+            color: accentColor,
+            transition: 'all 0.5s ease',
+          }}
+        >
+          <span
+            className="w-1.5 h-1.5 rounded-full"
+            style={{ backgroundColor: accentColor, animation: 'pulse 2s infinite' }}
+          />
+          {isSW
+            ? 'CS @ IIIT Dharwad · Systems, Vision & Web'
+            : '3D · CGI · Hardware Prototyping'}
+        </div>
 
-              <p className="text-base sm:text-xl font-mono text-text-muted max-w-2xl">
-                CS @ IIIT Dharwad (9.44 CGPA) &nbsp;·&nbsp; Systems &nbsp;·&nbsp; Vision &nbsp;·&nbsp; Web
-              </p>
-            </div>
+        {/* Hero name — centered + typewriter in SW mode */}
+        <h1
+          style={{
+            fontFamily: headingFont,
+            fontSize: 'clamp(2.8rem, 8vw, 6rem)',
+            fontWeight: 800,
+            letterSpacing: isSW ? '-0.02em' : '-0.03em',
+            color: '#F3F4F6',
+            lineHeight: 1.05,
+            transition: 'font-family 0.4s ease',
+          }}
+          className="mb-4 relative"
+        >
+          {isSW ? (
+            <>
+              <span style={{ color: accentColor, marginRight: '0.2em' }}>{'>'}</span>
+              {headline}
+              <span
+                className="inline-block w-[0.12em] h-[0.9em] ml-1 align-middle"
+                style={{
+                  backgroundColor: accentColor,
+                  animation: 'blink 1s step-end infinite',
+                  verticalAlign: '-0.05em',
+                }}
+              />
+            </>
+          ) : (
+            <span style={{ color: '#F3F4F6' }}>Raskin Verma</span>
+          )}
+        </h1>
 
-            {/* Quick Metrics Strip */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 max-w-2xl font-mono text-xs">
-              <div className="p-2.5 bg-surface border-l-2 border-l-emerald-400 border-y border-r border-border">
-                <div className="text-text-muted text-[10px]">COMPETITION</div>
-                <div className="text-text-primary font-semibold">Aerothon 2nd / ISRO 4th</div>
-              </div>
-              <div className="p-2.5 bg-surface border-l-2 border-l-blue-400 border-y border-r border-border">
-                <div className="text-text-muted text-[10px]">CORE LANGUAGES</div>
-                <div className="text-text-primary font-semibold">C++ · Python · SQL</div>
-              </div>
-              <div className="p-2.5 bg-surface border-l-2 border-l-purple-400 border-y border-r border-border">
-                <div className="text-text-muted text-[10px]">SYSTEMS & VISION</div>
-                <div className="text-text-primary font-semibold">ROS · OpenCV · Sockets</div>
-              </div>
-              <div className="p-2.5 bg-surface border-l-2 border-l-emerald-400 border-y border-r border-border">
-                <div className="text-text-muted text-[10px]">ACADEMIC RECORD</div>
-                <div className="text-text-primary font-semibold">9.44 CGPA (Class 2028)</div>
-              </div>
-            </div>
+        {/* Tagline */}
+        <p
+          className="text-base sm:text-lg mb-10 leading-relaxed max-w-xl"
+          style={{
+            color: 'rgba(232,234,240,0.55)',
+            fontFamily: isSW ? '"JetBrains Mono", monospace' : '"Inter", sans-serif',
+            fontSize: isSW ? '0.92rem' : '1.05rem',
+            transition: 'all 0.4s ease',
+          }}
+        >
+          {isSW
+            ? '// Building autonomous systems, computer vision pipelines, and graph-native RAG — from ISRO drone comps to national aerospace hackathons.'
+            : 'Commercial CGI pipelines for Dubai clients, custom hardware CAD for quadcopter payloads, and physics-based procedural simulations.'}
+        </p>
 
-            {/* CTAs */}
-            <div className="flex flex-wrap items-center gap-4 pt-4 font-mono text-xs">
-              <a
-                href="#projects"
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-400 text-black font-semibold hover:bg-emerald-300 transition-colors shadow-lg shadow-emerald-400/10"
+        {/* CTA buttons — centered */}
+        <div className="flex flex-wrap items-center justify-center gap-4 mb-16">
+          <a
+            href="#projects"
+            className="flex items-center gap-2 px-6 py-3 font-semibold text-sm rounded-full transition-all"
+            style={{
+              backgroundColor: accentColor,
+              color: '#000',
+              fontFamily: isSW ? '"JetBrains Mono", monospace' : '"Syne", sans-serif',
+              boxShadow: `0 0 32px ${accentColor}35`,
+              transition: 'all 0.4s ease',
+            }}
+          >
+            {isSW ? 'View Projects' : 'See Renders'}
+            <ArrowRight className="w-4 h-4" />
+          </a>
+
+          <a
+            href="https://github.com/raskinverma"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-5 py-3 font-mono text-sm rounded-full border transition-all text-text-muted hover:text-text-primary"
+            style={{
+              borderColor: 'rgba(255,255,255,0.1)',
+              background: 'rgba(255,255,255,0.03)',
+              backdropFilter: 'blur(8px)',
+            }}
+          >
+            <GithubIcon className="w-4 h-4" />
+            github.com/raskinverma
+          </a>
+
+          {/* Mode switch button — minimal */}
+          <button
+            onClick={toggleMode}
+            className="px-5 py-3 font-mono text-xs rounded-full border transition-all"
+            style={{
+              borderColor: `${accentColor}33`,
+              color: accentColor,
+              background: accentDim,
+            }}
+          >
+            {isSW ? '→ Switch to 3D Mode' : '→ Switch to SW Mode'}
+          </button>
+        </div>
+
+        {/* Metrics strip — glass cards */}
+        <div className="w-full grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {metrics.map((m) => (
+            <div
+              key={m.label}
+              className="flex flex-col items-center justify-center p-4 rounded-xl text-center border"
+              style={{
+                background: 'rgba(255,255,255,0.03)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                borderColor: 'rgba(255,255,255,0.07)',
+                transition: 'all 0.4s ease',
+              }}
+            >
+              <span
+                className="text-[10px] font-mono uppercase tracking-widest mb-1"
+                style={{ color: 'rgba(255,255,255,0.3)' }}
               >
-                <span>[ View Systems Projects ]</span>
-                <ArrowRight className="w-4 h-4" />
-              </a>
-
-              <a
-                href="https://github.com/raskinverma"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-surface border border-border hover:border-text-muted text-text-primary transition-colors"
+                {m.label}
+              </span>
+              <span
+                className="text-xs font-semibold"
+                style={{
+                  fontFamily: isSW ? '"JetBrains Mono", monospace' : '"Syne", sans-serif',
+                  color: '#E8EAF0',
+                }}
               >
-                <GithubIcon className="w-4 h-4" />
-                <span>github.com/raskinverma</span>
-              </a>
-
-              <button
-                onClick={toggleMode}
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-surface border border-amber-500/30 text-amber-400 hover:bg-amber-500/10 transition-colors ml-auto sm:ml-0"
-              >
-                <Box className="w-4 h-4" />
-                <span>Switch to 3D & CGI Mode &rarr;</span>
-              </button>
+                {m.value}
+              </span>
             </div>
-          </div>
-        ) : (
-          /* Mode 2: 3D & Visualization Hero */
-          <div className="relative rounded-2xl overflow-hidden border border-border bg-gradient-to-b from-[#120f1c] via-[#090710] to-bg p-8 sm:p-14">
-            {/* Ambient amber glow */}
-            <div className="absolute top-0 right-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+          ))}
+        </div>
 
-            <div className="relative z-10 max-w-3xl space-y-6">
-              {/* Studio badge */}
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-mono">
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                <span>CINEMATIC CGI & HARDWARE PROTOTYPING</span>
-              </div>
-
-              {/* Editorial Title */}
-              <div className="space-y-2">
-                <p className="text-xs sm:text-sm font-mono tracking-widest text-amber-400/80 uppercase">
-                  3D · CGI · Hardware
-                </p>
-                <h1 className="text-4xl sm:text-6xl md:text-7xl font-display font-extrabold tracking-tight text-text-primary leading-[1.05]">
-                  Raskin Verma
-                  <span className="block text-2xl sm:text-3xl md:text-4xl font-medium text-amber-300/90 mt-2 font-display">
-                    Visual Engineering &amp; Render Pipeline
-                  </span>
-                </h1>
-              </div>
-
-              <p className="text-sm sm:text-base text-text-muted leading-relaxed font-sans max-w-xl">
-                Full-pipeline commercial CGI advertisements for international clients in Dubai, custom 3D hardware engineering for autonomous quadcopters, and procedural simulations powered by Blender Geometry Nodes.
-              </p>
-
-              {/* Toolchain / Render Stack badges */}
-              <div className="flex flex-wrap gap-2 pt-2 font-mono text-xs">
-                {['Blender Cycles', 'Octane Render', 'PBR Fluid Sims', 'Geometry Nodes', 'CAD 3D Printing'].map((pill) => (
-                  <span
-                    key={pill}
-                    className="px-3 py-1 rounded-full bg-surface-elevated border border-border text-amber-200/80"
-                  >
-                    {pill}
-                  </span>
-                ))}
-              </div>
-
-              {/* CTAs */}
-              <div className="flex flex-wrap items-center gap-4 pt-4 font-mono text-xs">
-                <a
-                  href="#projects"
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-amber-400 text-black font-display font-bold hover:bg-amber-300 transition-all shadow-xl shadow-amber-500/10"
-                >
-                  <span>Explore 3D Renders</span>
-                  <ArrowRight className="w-4 h-4" />
-                </a>
-
-                <button
-                  onClick={toggleMode}
-                  className="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-surface border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 transition-colors"
-                >
-                  <Terminal className="w-4 h-4" />
-                  <span>&larr; Switch to Software Mode</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Scroll hint */}
+        <div className="mt-14 flex flex-col items-center gap-2 opacity-30 hover:opacity-60 transition-opacity">
+          <span className="text-[11px] font-mono text-text-muted">Scroll to explore</span>
+          <ArrowDown className="w-4 h-4 text-text-muted animate-bounce" />
+        </div>
       </div>
     </section>
   );

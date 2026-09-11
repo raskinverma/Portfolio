@@ -1,53 +1,102 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { useMode } from '../../context/ModeContext';
 import { Terminal, Box } from 'lucide-react';
 
-export const ModeToggle = ({ isScrolled = false, className = '' }) => {
-  const { mode, setMode } = useMode();
+export const ModeToggle = ({ compact = false }) => {
+  const { mode, toggleMode } = useMode();
+  const btnRef = useRef(null);
+
+  const isSW = mode === 'software';
+
+  const handleClick = (e) => {
+    toggleMode(e);
+  };
 
   return (
-    <div
-      className={`relative inline-flex items-center p-1 rounded-full bg-[#0d0e14] border transition-all duration-300 ${
-        isScrolled ? 'border-accent/40 shadow-lg shadow-black/40 scale-105' : 'border-border'
-      } ${className}`}
-      role="group"
-      aria-label="Portfolio Mode Toggle"
+    <button
+      ref={btnRef}
+      onClick={handleClick}
+      aria-label={`Switch to ${isSW ? '3D' : 'Software'} mode`}
+      style={{
+        // Glass pill
+        background: 'rgba(255,255,255,0.04)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        border: `1px solid rgba(255,255,255,0.1)`,
+        borderRadius: '999px',
+        padding: compact ? '5px 10px' : '6px 14px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        cursor: 'pointer',
+        position: 'relative',
+        transition: 'all 0.3s ease',
+        overflow: 'hidden',
+      }}
+      className="group"
     >
-      {/* SW Mode Button */}
-      <button
-        onClick={() => setMode('software')}
-        className={`relative z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono transition-all duration-200 ${
-          mode === 'software'
-            ? 'text-black font-semibold shadow-sm'
-            : 'text-text-muted hover:text-text-primary'
-        }`}
-      >
-        <Terminal className="w-3.5 h-3.5" />
-        <span>SW</span>
-      </button>
-
-      {/* 3D Mode Button */}
-      <button
-        onClick={() => setMode('visual')}
-        className={`relative z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-display tracking-wide transition-all duration-200 ${
-          mode === 'visual'
-            ? 'text-black font-bold shadow-sm'
-            : 'text-text-muted hover:text-text-primary'
-        }`}
-      >
-        <Box className="w-3.5 h-3.5" />
-        <span>3D</span>
-      </button>
-
-      {/* Animated Sliding Pill */}
+      {/* Glowing background slide */}
       <div
-        className="absolute top-1 bottom-1 rounded-full transition-all duration-300 ease-out"
         style={{
-          backgroundColor: mode === 'software' ? '#4ADE80' : '#F59E0B',
-          left: mode === 'software' ? '4px' : 'calc(50% - 1px)',
-          width: 'calc(50% - 3px)',
+          position: 'absolute',
+          inset: 0,
+          borderRadius: '999px',
+          background: isSW
+            ? 'radial-gradient(ellipse at 30% 50%, rgba(74,222,128,0.15) 0%, transparent 70%)'
+            : 'radial-gradient(ellipse at 70% 50%, rgba(245,158,11,0.15) 0%, transparent 70%)',
+          transition: 'all 0.5s ease',
         }}
       />
-    </div>
+
+      {/* SW label */}
+      <span
+        style={{
+          fontFamily: '"JetBrains Mono", monospace',
+          fontSize: '11px',
+          fontWeight: isSW ? 700 : 400,
+          color: isSW ? '#4ADE80' : 'rgba(255,255,255,0.3)',
+          transition: 'all 0.3s ease',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '4px',
+          position: 'relative',
+          zIndex: 1,
+        }}
+      >
+        <Terminal style={{ width: '11px', height: '11px' }} />
+        SW
+      </span>
+
+      {/* Divider dot */}
+      <div
+        style={{
+          width: '3px',
+          height: '3px',
+          borderRadius: '50%',
+          backgroundColor: 'rgba(255,255,255,0.2)',
+          position: 'relative',
+          zIndex: 1,
+        }}
+      />
+
+      {/* 3D label */}
+      <span
+        style={{
+          fontFamily: '"Syne", sans-serif',
+          fontSize: '11px',
+          fontWeight: !isSW ? 700 : 400,
+          color: !isSW ? '#F59E0B' : 'rgba(255,255,255,0.3)',
+          transition: 'all 0.3s ease',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '4px',
+          position: 'relative',
+          zIndex: 1,
+        }}
+      >
+        <Box style={{ width: '11px', height: '11px' }} />
+        3D
+      </span>
+    </button>
   );
 };

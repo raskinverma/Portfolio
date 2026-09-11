@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 
 const ModeContext = createContext();
 
@@ -11,40 +11,53 @@ export const ModeProvider = ({ children }) => {
     return 'software';
   });
 
-  const [isTransitioning, setIsTransitioning] = useState(false);
+  // Transition overlay state
+  const [transitioning, setTransitioning] = useState(false);
+  const [transitionOrigin, setTransitionOrigin] = useState({ x: '50%', y: '50%' });
+  const [nextMode, setNextMode] = useState(null);
+  const pendingRef = useRef(null);
 
   useEffect(() => {
-    const root = document.documentElement;
     const body = document.body;
-
     if (mode === 'visual') {
       body.classList.add('mode-visual');
-      root.style.setProperty('--current-accent', '#F59E0B');
     } else {
       body.classList.remove('mode-visual');
-      root.style.setProperty('--current-accent', '#4ADE80');
     }
-
     localStorage.setItem('raskin_portfolio_mode', mode);
   }, [mode]);
 
-  const setMode = (newMode) => {
-    if (newMode === mode) return;
-    setIsTransitioning(true);
-    setTimeout(() => {
+  const setMode = (newMode, originX, originY) => {
+    if (newMode === mode || transitioning) return;
+
+    // Capture click origin for radial wipe
+    const ox = originX ?? '50%';
+    const oy = originY ?? '50%';
+
+    setTransitionOrigin({ x: ox, y: oy });
+    setNextMode(newMode);
+    setTransitioning(true);
+
+    // After overlay covers screen, swap mode
+    pendingRef.current = setTimeout(() => {
       setModeState(newMode);
+      // After mode applied, let overlay recede
       setTimeout(() => {
-        setIsTransitioning(false);
-      }, 150);
-    }, 150);
+        setTransitioning(false);
+        setNextMode(null);
+      }, 350);
+    }, 300);
   };
 
-  const toggleMode = () => {
-    setMode(mode === 'software' ? 'visual' : 'software');
+  const toggleMode = (e) => {
+    const rect = e?.currentTarget?.getBoundingClientRect?.();
+    const x = rect ? `${rect.left + rect.width / 2}px` : '50%';
+    const y = rect ? `${rect.top + rect.height / 2}px` : '50%';
+    setMode(mode === 'software' ? 'visual' : 'software', x, y);
   };
 
   return (
-    <ModeContext.Provider value={{ mode, setMode, toggleMode, isTransitioning }}>
+    <ModeContext.Provider value={{ mode, setMode, toggleMode, transitioning, transitionOrigin, nextMode }}>
       {children}
     </ModeContext.Provider>
   );
@@ -52,8 +65,6 @@ export const ModeProvider = ({ children }) => {
 
 export const useMode = () => {
   const context = useContext(ModeContext);
-  if (!context) {
-    throw new Error('useMode must be used within a ModeProvider');
-  }
+  if (!context) throw new Error('useMode must be used within a ModeProvider');
   return context;
 };

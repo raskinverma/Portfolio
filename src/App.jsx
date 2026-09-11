@@ -1,5 +1,6 @@
-import React from 'react';
-import { ModeProvider, useMode } from './context/ModeContext';
+import React, { useEffect, useState } from 'react';
+import { useMode } from './context/ModeContext';
+import { ModeProvider } from './context/ModeContext';
 import { GridBackground } from './components/ui/GridBackground';
 import { TopBar } from './components/layout/TopBar';
 import { Hero } from './components/sections/Hero';
@@ -8,31 +9,54 @@ import { Certifications } from './components/sections/Certifications';
 import { About } from './components/sections/About';
 import { Footer } from './components/layout/Footer';
 
-const PortfolioContent = () => {
-  const { isTransitioning } = useMode();
+// Full-screen radial wipe transition overlay
+const ModeTransitionOverlay = () => {
+  const { transitioning, transitionOrigin, nextMode, mode } = useMode();
+
+  const color = nextMode === 'visual' || (!nextMode && mode === 'visual')
+    ? '#F59E0B'
+    : '#4ADE80';
 
   return (
+    <div
+      className="fixed inset-0 pointer-events-none"
+      style={{ zIndex: 9999 }}
+    >
+      {/* Radial reveal ripple */}
+      <div
+        style={{
+          position: 'absolute',
+          borderRadius: '50%',
+          backgroundColor: color,
+          opacity: transitioning ? 1 : 0,
+          transformOrigin: `${transitionOrigin.x} ${transitionOrigin.y}`,
+          transform: transitioning ? 'scale(80)' : 'scale(0)',
+          transition: transitioning
+            ? 'transform 0.55s cubic-bezier(0.77,0,0.18,1), opacity 0s'
+            : 'opacity 0.3s ease, transform 0s 0.3s',
+          width: '40px',
+          height: '40px',
+          left: `calc(${transitionOrigin.x} - 20px)`,
+          top: `calc(${transitionOrigin.y} - 20px)`,
+        }}
+      />
+    </div>
+  );
+};
+
+const PortfolioContent = () => {
+  return (
     <div className="relative min-h-screen bg-bg text-text-primary selection:bg-accent selection:text-black">
-      {/* Ambient Canvas Background */}
       <GridBackground />
-
-      {/* Global Navigation Header */}
       <TopBar />
-
-      {/* Main Content with smooth mode switch cross-fade */}
-      <main
-        className={`relative z-10 transition-all duration-200 ${
-          isTransitioning ? 'opacity-30 scale-[0.99] filter blur-[1px]' : 'opacity-100 scale-100 filter-none'
-        }`}
-      >
+      <main className="relative z-10">
         <Hero />
         <Projects />
         <Certifications />
         <About />
       </main>
-
-      {/* Minimal Footer */}
       <Footer />
+      <ModeTransitionOverlay />
     </div>
   );
 };
