@@ -64,6 +64,11 @@ body {
   color: var(--text-primary);
   font-family: var(--font-body);
   overflow-x: hidden;
+  cursor: none;
+}
+
+a, button, [data-cursor] {
+  cursor: none;
 }
 
 ::-webkit-scrollbar { width: 6px; }

@@ -1,64 +1,102 @@
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import { VideoPlayer } from '../ui/VideoPlayer';
-import { Box, Sparkles, Film, ExternalLink, Layers, Eye } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
+
+const EASE = [0.22, 1, 0.36, 1];
 
 export const CGICard = ({ project }) => {
-  const [activeGalleryIndex, setActiveGalleryIndex] = useState(0);
+  const [activeScene, setActiveScene] = useState(0);
 
   return (
-    <article className="relative flex flex-col bg-surface border border-border/80 rounded-xl overflow-hidden transition-all duration-300 hover:border-accent/50 hover:shadow-2xl hover:shadow-amber-500/5 group">
-      {/* Full Bleed Media Area */}
+    <motion.article
+      data-cursor="VIEW"
+      whileHover={{ y: -8, scale: 1.01 }}
+      transition={{ type: 'spring', stiffness: 280, damping: 22 }}
+      style={{
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
+        borderRadius: 12,
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+        cursor: 'default',
+      }}
+    >
+      {/* Media area */}
       {project.isGallery ? (
-        <div className="relative w-full aspect-video bg-black/80 flex flex-col justify-between p-4 overflow-hidden border-b border-border">
-          {/* Active scene atmospheric visual representation */}
-          <div
-            className={`absolute inset-0 bg-gradient-to-br transition-all duration-500 ${
-              project.galleryItems[activeGalleryIndex].color
-            }`}
+        <div style={{
+          position: 'relative',
+          aspectRatio: '16/9',
+          background: '#0a0812',
+          overflow: 'hidden',
+        }}>
+          <motion.div
+            key={activeScene}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, ease: EASE }}
+            style={{
+              position: 'absolute', inset: 0,
+              background: `linear-gradient(135deg, ${project.galleryItems[activeScene].color.replace('from-', '').replace('to-', '')} 0%, transparent 100%)`,
+            }}
           />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.85)_100%)]" />
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 50%)' }} />
 
-          {/* Top meta */}
-          <div className="relative z-10 flex items-center justify-between">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-mono tracking-wider bg-black/60 border border-white/15 text-amber-300">
-              <Sparkles className="w-3 h-3 text-amber-400" />
-              <span>PROCEDURAL RENDER SERIES</span>
-            </span>
-            <span className="text-[11px] font-mono text-text-muted bg-black/50 px-2 py-0.5 rounded">
-              0{activeGalleryIndex + 1} / 0{project.galleryItems.length}
-            </span>
-          </div>
-
-          {/* Center Stage Preview */}
-          <div className="relative z-10 my-auto text-center px-4 py-3">
-            <h4 className="text-lg sm:text-xl font-display font-bold text-white tracking-wide mb-1">
-              {project.galleryItems[activeGalleryIndex].title}
-            </h4>
-            <p className="text-xs text-amber-200/80 font-mono">
-              {project.galleryItems[activeGalleryIndex].subtitle}
-            </p>
-          </div>
-
-          {/* Scene Selector Strip */}
-          <div className="relative z-10 grid grid-cols-3 gap-2 pt-2 border-t border-white/10">
-            {project.galleryItems.map((item, idx) => (
-              <button
-                key={item.title}
-                onClick={() => setActiveGalleryIndex(idx)}
-                className={`text-left px-2.5 py-1.5 rounded text-xs transition-all ${
-                  activeGalleryIndex === idx
-                    ? 'bg-amber-500/20 border border-amber-400/40 text-white'
-                    : 'bg-black/40 border border-transparent text-text-muted hover:text-text-primary'
-                }`}
+          {/* Scene title */}
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '20px 20px 14px' }}>
+            <div style={{ overflow: 'hidden' }}>
+              <motion.p
+                key={activeScene + 'title'}
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.4, ease: EASE }}
+                style={{ fontFamily: '"Inter", sans-serif', fontWeight: 700, fontSize: '1.1rem', color: '#fff', marginBottom: 4 }}
               >
-                <div className="text-[10px] font-mono text-amber-400">Scene 0{idx + 1}</div>
-                <div className="truncate text-[11px] font-medium">{item.title}</div>
-              </button>
-            ))}
+                {project.galleryItems[activeScene].title}
+              </motion.p>
+            </div>
+            <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', fontFamily: '"JetBrains Mono", monospace' }}>
+              {project.galleryItems[activeScene].subtitle}
+            </p>
+
+            {/* Scene dots */}
+            <div style={{ display: 'flex', gap: 6, marginTop: 12 }}>
+              {project.galleryItems.map((_, i) => (
+                <motion.button
+                  key={i}
+                  onClick={() => setActiveScene(i)}
+                  whileHover={{ scale: 1.3 }}
+                  transition={{ type: 'spring', stiffness: 400 }}
+                  style={{
+                    width: i === activeScene ? 20 : 6,
+                    height: 6,
+                    borderRadius: 999,
+                    background: i === activeScene ? 'var(--accent)' : 'rgba(255,255,255,0.2)',
+                    border: 'none', cursor: 'pointer', padding: 0,
+                    transition: 'width 0.3s ease, background 0.3s ease',
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Badge */}
+          <div style={{ position: 'absolute', top: 12, left: 12 }}>
+            <span style={{
+              fontSize: '10px', fontFamily: '"JetBrains Mono", monospace',
+              background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)',
+              padding: '4px 10px', borderRadius: 999,
+              border: '1px solid rgba(255,255,255,0.1)',
+              color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: 5,
+            }}>
+              <Sparkles style={{ width: 10, height: 10 }} />
+              RENDER SERIES
+            </span>
           </div>
         </div>
       ) : (
-        <div className="relative w-full border-b border-border">
+        <div style={{ borderBottom: '1px solid var(--border)' }}>
           <VideoPlayer
             src={project.videoUrl}
             poster={project.posterUrl}
@@ -69,58 +107,86 @@ export const CGICard = ({ project }) => {
         </div>
       )}
 
-      {/* Content Area */}
-      <div className="p-6 flex flex-col flex-grow">
-        {/* Top Badge & Client */}
-        <div className="flex items-center justify-between gap-2 mb-3">
-          <span
-            className={`inline-flex items-center px-2.5 py-0.5 text-[10px] font-mono tracking-wider rounded-full border ${
-              project.badgeColor || 'text-accent border-accent/30 bg-accent/10'
-            }`}
-          >
+      {/* Content */}
+      <div style={{ padding: '22px 24px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <span style={{
+            fontSize: '10px',
+            fontFamily: '"JetBrains Mono", monospace',
+            letterSpacing: '0.08em',
+            color: 'var(--accent)',
+            border: '1px solid var(--accent)33',
+            padding: '3px 10px',
+            borderRadius: 999,
+          }}>
             {project.badge}
           </span>
           {project.client && (
-            <span className="text-[11px] font-mono text-text-muted">
-              Client: <strong className="text-text-primary font-semibold">{project.client}</strong>
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: '"JetBrains Mono", monospace' }}>
+              {project.client}
             </span>
           )}
         </div>
 
-        {/* Title */}
-        <h3 className="text-lg sm:text-xl font-display font-bold text-text-primary tracking-tight mb-2 group-hover:text-accent transition-colors">
+        <h3 style={{
+          fontFamily: '"Inter", sans-serif',
+          fontWeight: 700, fontSize: '1.1rem',
+          color: 'var(--text-primary)',
+          letterSpacing: '-0.02em',
+          lineHeight: 1.3, marginBottom: 10,
+        }}>
           {project.title}
         </h3>
 
-        {/* Description */}
-        <p className="text-xs sm:text-sm text-text-muted leading-relaxed font-sans mb-4 flex-grow">
+        <p style={{
+          fontSize: '0.85rem', color: 'var(--text-muted)',
+          lineHeight: 1.75, marginBottom: 16, flex: 1,
+        }}>
           {project.description}
         </p>
 
-        {/* Render Specs / Metrics */}
+        {/* Metrics */}
         {project.metrics && (
-          <div className="grid grid-cols-2 gap-2 my-3 p-3 bg-black/40 rounded-lg border border-border/60 font-mono text-xs">
-            {project.metrics.map((m, idx) => (
-              <div key={idx} className="flex flex-col">
-                <span className="text-text-muted text-[10px] uppercase tracking-wider">{m.label}</span>
-                <span className="text-amber-300 font-semibold">{m.value}</span>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8, marginBottom: 16 }}>
+            {project.metrics.map((m) => (
+              <div key={m.label} style={{
+                padding: '8px 10px',
+                background: 'rgba(255,255,255,0.02)',
+                border: '1px solid var(--border)',
+                borderRadius: 6,
+              }}>
+                <div style={{ fontSize: '9px', fontFamily: '"JetBrains Mono", monospace', color: 'var(--text-muted)', letterSpacing: '0.08em', marginBottom: 3 }}>
+                  {m.label.toUpperCase()}
+                </div>
+                <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--accent)' }}>
+                  {m.value}
+                </div>
               </div>
             ))}
           </div>
         )}
 
         {/* Tags */}
-        <div className="flex flex-wrap gap-1.5 mt-auto pt-3 border-t border-border/40 font-mono text-xs">
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, paddingTop: 14, borderTop: '1px solid var(--border)' }}>
           {project.tags.map((tag) => (
-            <span
+            <motion.span
               key={tag}
-              className="px-2.5 py-0.5 rounded-full bg-surface-elevated text-text-muted border border-border hover:border-amber-400/40 hover:text-amber-300 transition-colors"
+              whileHover={{ borderColor: 'var(--accent)', color: 'var(--accent)' }}
+              transition={{ duration: 0.15 }}
+              style={{
+                padding: '4px 10px', fontSize: '11px',
+                fontFamily: '"JetBrains Mono", monospace',
+                color: 'var(--text-muted)',
+                border: '1px solid var(--border)',
+                borderRadius: 999,
+                background: 'transparent',
+              }}
             >
               {tag}
-            </span>
+            </motion.span>
           ))}
         </div>
       </div>
-    </article>
+    </motion.article>
   );
 };

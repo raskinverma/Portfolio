@@ -1,16 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { motion, useSpring, useMotionValue } from 'framer-motion';
 import { useMode } from '../../context/ModeContext';
 import { ArrowDown, ArrowRight } from 'lucide-react';
 import { GithubIcon } from '../ui/Icons';
 
-/* Typewriter — plays on mount */
-const useTypewriter = (text, speed = 60) => {
+const EASE = [0.22, 1, 0.36, 1];
+
+const useTypewriter = (text, speed = 55) => {
   const [shown, setShown] = useState('');
   useEffect(() => {
     setShown('');
     let i = 0;
     const id = setInterval(() => {
-      if (i < text.length) { setShown(text.slice(0, ++i)); }
+      if (i < text.length) setShown(text.slice(0, ++i));
       else clearInterval(id);
     }, speed);
     return () => clearInterval(id);
@@ -18,230 +20,268 @@ const useTypewriter = (text, speed = 60) => {
   return shown;
 };
 
-/* Split background — left half SW green, right half 3D amber,
-   mouse position gently shifts the divider */
-const SplitBackground = () => {
-  const [mx, setMx] = useState(0.5);
-  const { mode } = useMode();
-  const rafRef = useRef(null);
-  const targetRef = useRef(0.5);
+/** Floating card that parallax-shifts on mouse move */
+const FloatingCard = ({ title, color, x, y, rotate, delay }) => {
+  const cardX = useSpring(0, { stiffness: 60, damping: 18 });
+  const cardY = useSpring(0, { stiffness: 60, damping: 18 });
 
   useEffect(() => {
     const onMove = (e) => {
-      targetRef.current = e.clientX / window.innerWidth;
+      const nx = (e.clientX / window.innerWidth - 0.5) * -18;
+      const ny = (e.clientY / window.innerHeight - 0.5) * -18;
+      cardX.set(nx);
+      cardY.set(ny);
     };
     window.addEventListener('mousemove', onMove);
-
-    const animate = () => {
-      setMx((prev) => {
-        const t = targetRef.current;
-        return prev + (t - prev) * 0.04;
-      });
-      rafRef.current = requestAnimationFrame(animate);
-    };
-    rafRef.current = requestAnimationFrame(animate);
-
-    return () => {
-      window.removeEventListener('mousemove', onMove);
-      cancelAnimationFrame(rafRef.current);
-    };
+    return () => window.removeEventListener('mousemove', onMove);
   }, []);
 
-  const pct = Math.round(mx * 100);
-
   return (
-    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {/* Left half — SW green glow */}
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background: `radial-gradient(ellipse at ${pct * 0.6}% 40%, rgba(94,255,158,0.09) 0%, transparent 65%)`,
-          transition: 'background 0.05s linear',
-        }}
-      />
-      {/* Right half — 3D amber glow */}
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background: `radial-gradient(ellipse at ${40 + pct * 0.6}% 55%, rgba(255,184,77,0.08) 0%, transparent 65%)`,
-          transition: 'background 0.05s linear',
-        }}
-      />
-      {/* Subtle vertical divider line */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '15%',
-          bottom: '15%',
-          left: `${pct}%`,
-          width: '1px',
-          background: 'linear-gradient(to bottom, transparent, rgba(255,255,255,0.06) 30%, rgba(255,255,255,0.06) 70%, transparent)',
-          transform: 'translateX(-50%)',
-        }}
-      />
-    </div>
+    <motion.div
+      style={{
+        position: 'absolute',
+        left: x,
+        top: y,
+        x: cardX,
+        y: cardY,
+        rotate,
+        width: 120,
+        height: 80,
+        borderRadius: 10,
+        background: color,
+        display: 'flex',
+        alignItems: 'flex-end',
+        padding: '10px 12px',
+        border: '1px solid rgba(255,255,255,0.08)',
+        backdropFilter: 'blur(10px)',
+        cursor: 'default',
+        userSelect: 'none',
+      }}
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.8, delay, ease: EASE }}
+      whileHover={{ scale: 1.05, rotate: 0, transition: { duration: 0.3 } }}
+    >
+      <span style={{
+        fontSize: '10px',
+        fontFamily: '"JetBrains Mono", monospace',
+        color: 'rgba(255,255,255,0.6)',
+        lineHeight: 1.3,
+      }}>
+        {title}
+      </span>
+    </motion.div>
   );
 };
 
 export const Hero = () => {
   const { mode, toggleMode } = useMode();
   const isSW = mode === 'software';
-  const typed = useTypewriter('Raskin Verma');
-
+  const typed = useTypewriter('RASKIN VERMA', 60);
   const accent = isSW ? '#5eff9e' : '#ffb84d';
-  const accentDim = isSW ? 'rgba(94,255,158,0.10)' : 'rgba(255,184,77,0.10)';
+
+  const floatingCards = [
+    { title: 'GraphRAG\nAerothon 2nd', color: 'rgba(94,255,158,0.08)', x: '5%',  y: '22%', rotate: -4, delay: 0.6 },
+    { title: 'ASCEND\nISRO 4th',       color: 'rgba(96,165,250,0.08)', x: '72%', y: '15%', rotate: 3,  delay: 0.75 },
+    { title: 'Gesture\nControl',        color: 'rgba(167,139,250,0.08)', x: '78%', y: '62%', rotate: 2, delay: 0.9 },
+    { title: 'Detail Empire\nCGI / 4K', color: 'rgba(255,184,77,0.10)', x: '2%',  y: '65%', rotate: -2, delay: 0.85 },
+  ];
 
   return (
     <section
       id="hero"
-      className="relative min-h-screen flex flex-col items-center justify-center px-4"
-      style={{ overflow: 'hidden' }}
+      style={{
+        position: 'relative',
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
+      }}
     >
-      {/* Split ambient background */}
-      <SplitBackground />
+      {/* Floating project cards — scattered around name */}
+      {floatingCards.map((c) => (
+        <FloatingCard key={c.title} {...c} />
+      ))}
 
-      {/* Content — always centered, same structure both modes */}
-      <div
-        className="relative z-10 flex flex-col items-center text-center w-full max-w-2xl mx-auto"
-        style={{ paddingTop: '10vh', paddingBottom: '8vh', animation: 'fadeUp 0.7s ease both' }}
-      >
+      {/* Center content */}
+      <div style={{
+        position: 'relative',
+        zIndex: 10,
+        textAlign: 'center',
+        maxWidth: 700,
+        padding: '0 24px',
+        paddingTop: '120px',
+      }}>
 
         {/* Status badge */}
-        <div
-          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs mb-12"
-          style={{
-            background: accentDim,
-            border: `1px solid ${accent}30`,
-            color: accent,
-            fontFamily: '"JetBrains Mono", monospace',
-            letterSpacing: '0.04em',
-          }}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2, ease: EASE }}
+          style={{ marginBottom: 40 }}
         >
-          <span
-            style={{
+          <span style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '6px 16px',
+            borderRadius: 999,
+            background: `${accent}12`,
+            border: `1px solid ${accent}30`,
+            fontSize: '11px',
+            fontFamily: '"JetBrains Mono", monospace',
+            color: accent,
+            letterSpacing: '0.06em',
+          }}>
+            <span style={{
               width: 6, height: 6, borderRadius: '50%',
-              backgroundColor: accent,
-              animation: 'pulse 2s infinite',
-              display: 'inline-block',
+              background: accent, display: 'inline-block',
+              boxShadow: `0 0 8px ${accent}`,
+            }} />
+            {isSW ? 'CS @ IIIT Dharwad · 9.44 CGPA' : '3D · CGI · Hardware'}
+          </span>
+        </motion.div>
+
+        {/* Oversized name */}
+        <div style={{ overflow: 'hidden', marginBottom: 24 }}>
+          <motion.h1
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            transition={{ duration: 0.9, delay: 0.35, ease: EASE }}
+            style={{
+              fontFamily: '"Inter", sans-serif',
+              fontSize: 'clamp(3.2rem, 10vw, 7.5rem)',
+              fontWeight: 900,
+              letterSpacing: '-0.04em',
+              color: 'var(--text-primary)',
+              lineHeight: 1,
             }}
-          />
-          {isSW
-            ? 'CS @ IIIT Dharwad · 9.44 CGPA'
-            : '3D · CGI · Hardware Prototyping'}
+          >
+            {isSW ? (
+              <>
+                <span style={{ color: accent }}>&gt;&nbsp;</span>
+                {typed}
+                <span style={{
+                  display: 'inline-block',
+                  width: '0.07em', height: '0.85em',
+                  background: accent, marginLeft: '0.05em',
+                  verticalAlign: '-0.05em',
+                  animation: 'blink 1s step-end infinite',
+                }} />
+              </>
+            ) : 'RASKIN VERMA'}
+          </motion.h1>
         </div>
 
-        {/* Name — typewriter in both modes */}
-        <h1
+        {/* Sub-label */}
+        <motion.p
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.55, ease: EASE }}
           style={{
             fontFamily: '"Inter", sans-serif',
-            fontSize: 'clamp(3rem, 9vw, 6.5rem)',
-            fontWeight: 800,
-            letterSpacing: '-0.04em',
-            lineHeight: 1,
-            color: 'var(--text-primary)',
-            marginBottom: '1.25rem',
-          }}
-        >
-          {isSW ? (
-            <>
-              <span style={{ color: accent, marginRight: '0.15em' }}>&gt;</span>
-              {typed}
-              <span
-                style={{
-                  display: 'inline-block',
-                  width: '0.08em',
-                  height: '0.8em',
-                  marginLeft: '0.08em',
-                  verticalAlign: '-0.02em',
-                  backgroundColor: accent,
-                  animation: 'blink 1s step-end infinite',
-                }}
-              />
-            </>
-          ) : (
-            'Raskin Verma'
-          )}
-        </h1>
-
-        {/* Tagline */}
-        <p
-          style={{
-            fontFamily: '"Inter", sans-serif',
-            fontSize: 'clamp(0.9rem, 2vw, 1.1rem)',
+            fontSize: 'clamp(0.9rem, 2vw, 1.05rem)',
             color: 'var(--text-muted)',
-            lineHeight: 1.7,
-            maxWidth: '520px',
-            marginBottom: '2.5rem',
+            lineHeight: 1.75,
+            maxWidth: 480,
+            margin: '0 auto 40px',
           }}
         >
           {isSW
             ? 'Systems engineering, computer vision, and graph-native RAG — from ISRO drone competitions to national aerospace hackathons.'
             : 'Full CGI pipelines for Dubai clients, custom hardware CAD for autonomous quadcopters, physics-based procedural simulations.'}
-        </p>
+        </motion.p>
 
-        {/* CTAs — centered */}
-        <div className="flex flex-wrap items-center justify-center gap-3">
-          <a
+        {/* CTAs */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.7, ease: EASE }}
+          style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}
+        >
+          <motion.a
             href="#projects"
-            className="flex items-center gap-2 font-semibold rounded-full transition-opacity hover:opacity-80"
+            data-cursor="VIEW"
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.97 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 20 }}
             style={{
-              background: accent,
-              color: '#000',
-              fontSize: '0.875rem',
-              padding: '0.75rem 1.75rem',
-              boxShadow: `0 0 40px ${accent}30`,
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              padding: '13px 28px', borderRadius: 999,
+              background: accent, color: '#000',
+              fontFamily: '"Inter", sans-serif',
+              fontWeight: 700, fontSize: '0.875rem',
+              textDecoration: 'none',
+              boxShadow: `0 0 40px ${accent}28`,
             }}
           >
             {isSW ? 'View Projects' : 'See Renders'}
             <ArrowRight style={{ width: 15, height: 15 }} />
-          </a>
+          </motion.a>
 
-          <a
+          <motion.a
             href="https://github.com/raskinverma"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 rounded-full transition-opacity hover:opacity-80"
+            data-cursor="GITHUB"
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.97 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 20 }}
             style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              padding: '13px 24px', borderRadius: 999,
               background: 'rgba(255,255,255,0.04)',
               border: '1px solid rgba(255,255,255,0.09)',
               color: 'var(--text-primary)',
+              fontFamily: '"Inter", sans-serif',
               fontSize: '0.875rem',
-              padding: '0.75rem 1.5rem',
+              textDecoration: 'none',
               backdropFilter: 'blur(10px)',
             }}
           >
             <GithubIcon style={{ width: 15, height: 15 }} />
             GitHub
-          </a>
+          </motion.a>
 
-          <button
+          <motion.button
             onClick={toggleMode}
-            className="rounded-full transition-opacity hover:opacity-80"
+            data-cursor="SWITCH"
+            whileHover={{ scale: 1.04 }}
+            whileTap={{ scale: 0.97 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 20 }}
             style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '13px 22px', borderRadius: 999,
               background: 'transparent',
               border: `1px solid ${accent}35`,
               color: accent,
-              fontSize: '0.8rem',
-              padding: '0.75rem 1.5rem',
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.78rem',
               cursor: 'pointer',
             }}
           >
             {isSW ? '→ 3D Mode' : '→ SW Mode'}
-          </button>
-        </div>
+          </motion.button>
+        </motion.div>
 
         {/* Scroll hint */}
-        <div
-          className="flex flex-col items-center gap-1.5"
-          style={{ marginTop: '5rem', opacity: 0.25 }}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0.3 }}
+          transition={{ duration: 1, delay: 1.4 }}
+          style={{ marginTop: 72, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}
         >
-          <span style={{ fontSize: '11px', fontFamily: '"JetBrains Mono", monospace', color: 'var(--text-muted)', letterSpacing: '0.08em' }}>
+          <span style={{ fontSize: '10px', fontFamily: '"JetBrains Mono", monospace', letterSpacing: '0.12em', color: 'var(--text-muted)' }}>
             SCROLL
           </span>
-          <ArrowDown style={{ width: 14, height: 14, color: 'var(--text-muted)', animation: 'bounce 1.5s infinite' }} />
-        </div>
+          <motion.div
+            animate={{ y: [0, 6, 0] }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            <ArrowDown style={{ width: 14, height: 14, color: 'var(--text-muted)' }} />
+          </motion.div>
+        </motion.div>
       </div>
     </section>
   );

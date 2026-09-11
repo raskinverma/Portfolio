@@ -1,120 +1,189 @@
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import { ExternalLink, Code2, Check, Copy } from 'lucide-react';
 import { GithubIcon } from '../ui/Icons';
 import { ArchDiagram } from '../ui/ArchDiagram';
 
-export const SoftwareCard = ({ project }) => {
-  const [copiedCode, setCopiedCode] = useState(false);
-  const [showCode, setShowCode] = useState(false);
+const EASE = [0.22, 1, 0.36, 1];
 
-  const handleCopyCode = () => {
+export const SoftwareCard = ({ project }) => {
+  const [showCode, setShowCode] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
     if (!project.codeSnippet) return;
     navigator.clipboard.writeText(project.codeSnippet);
-    setCopiedCode(true);
-    setTimeout(() => setCopiedCode(false), 2000);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
-    <article className="relative flex flex-col bg-surface border-y border-r border-border border-l-[3px] border-l-accent p-5 sm:p-6 transition-all duration-200 hover:border-r-border/80 hover:bg-surface-elevated/70 group">
-      {/* Top Header Badge */}
-      <div className="flex items-center justify-between gap-3 mb-3">
-        <span
-          className={`inline-flex items-center px-2 py-0.5 text-[10px] font-mono tracking-wider border rounded-none ${
-            project.badgeColor || 'text-accent border-accent/30 bg-accent/10'
-          }`}
-        >
+    <motion.article
+      data-cursor="VIEW"
+      whileHover={{ y: -6, scale: 1.01 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 24 }}
+      style={{
+        position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
+        borderLeft: '3px solid var(--accent)',
+        borderRadius: 0,
+        padding: '28px',
+        cursor: 'default',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Accent glow on hover */}
+      <div style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none',
+        background: 'radial-gradient(ellipse at 0% 0%, var(--accent-glow) 0%, transparent 60%)',
+        opacity: 0,
+        transition: 'opacity 0.4s ease',
+      }}
+        className="card-glow"
+      />
+
+      {/* Badge + links row */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16, gap: 8 }}>
+        <span style={{
+          display: 'inline-block',
+          fontSize: '10px',
+          fontFamily: '"JetBrains Mono", monospace',
+          letterSpacing: '0.08em',
+          padding: '3px 10px',
+          border: `1px solid ${project.badgeColor?.includes('amber') ? '#F59E0B44' : project.badgeColor?.includes('blue') ? '#60A5FA44' : project.badgeColor?.includes('purple') ? '#A78BFA44' : 'var(--accent)44'}`,
+          color: project.badgeColor?.includes('amber') ? '#F59E0B' : project.badgeColor?.includes('blue') ? '#60A5FA' : project.badgeColor?.includes('purple') ? '#A78BFA' : 'var(--accent)',
+          background: 'transparent',
+          whiteSpace: 'nowrap',
+        }}>
           {project.badge}
         </span>
 
-        <div className="flex items-center gap-2">
+        <div style={{ display: 'flex', gap: 8 }}>
           {project.codeSnippet && (
-            <button
+            <motion.button
+              whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}
               onClick={() => setShowCode(!showCode)}
-              className={`p-1.5 rounded-none text-xs font-mono transition-colors flex items-center gap-1 ${
-                showCode
-                  ? 'bg-accent/15 text-accent border border-accent/40'
-                  : 'text-text-muted hover:text-text-primary hover:bg-surface-elevated'
-              }`}
-              title="Toggle Code Snippet"
+              style={{
+                padding: '4px 10px', background: 'transparent',
+                border: `1px solid ${showCode ? 'var(--accent)' : 'var(--border)'}`,
+                color: showCode ? 'var(--accent)' : 'var(--text-muted)',
+                fontSize: '10px', fontFamily: '"JetBrains Mono", monospace',
+                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4,
+              }}
             >
-              <Code2 className="w-3.5 h-3.5" />
-              <span className="text-[10px] hidden sm:inline">{showCode ? 'Hide Code' : 'View Code'}</span>
-            </button>
+              <Code2 style={{ width: 11, height: 11 }} />
+              {showCode ? 'Hide' : 'Code'}
+            </motion.button>
           )}
-
           {project.githubUrl && (
-            <a
-              href={project.githubUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-1.5 text-text-muted hover:text-text-primary hover:bg-surface-elevated transition-colors"
-              title="View Repository"
+            <motion.a
+              href={project.githubUrl} target="_blank" rel="noopener noreferrer"
+              whileHover={{ scale: 1.15 }} whileTap={{ scale: 0.9 }}
+              data-cursor="OPEN"
+              style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}
             >
-              <GithubIcon className="w-4 h-4" />
-            </a>
+              <GithubIcon style={{ width: 16, height: 16 }} />
+            </motion.a>
           )}
         </div>
       </div>
 
       {/* Title */}
-      <h3 className="text-base sm:text-lg font-mono font-bold text-text-primary tracking-tight mb-2 group-hover:text-accent transition-colors">
+      <h3 style={{
+        fontFamily: '"Inter", sans-serif',
+        fontWeight: 700, fontSize: '1.05rem',
+        color: 'var(--text-primary)',
+        letterSpacing: '-0.02em',
+        lineHeight: 1.3, marginBottom: 12,
+      }}>
         {project.title}
       </h3>
 
       {/* Description */}
-      <p className="text-xs sm:text-sm text-text-muted leading-relaxed font-sans mb-4 flex-grow">
+      <p style={{
+        fontSize: '0.85rem', color: 'var(--text-muted)',
+        lineHeight: 1.75, marginBottom: 16, flex: 1,
+      }}>
         {project.description}
       </p>
 
-      {/* Interactive Visual Element */}
-      {project.isArchDiagram && (
-        <div className="my-2">
-          <ArchDiagram />
-        </div>
-      )}
+      {/* Arch diagram */}
+      {project.isArchDiagram && <ArchDiagram />}
 
-      {/* Code Drawer snippet */}
-      {project.codeSnippet && showCode && (
-        <div className="my-3 relative bg-[#090b10] border border-border p-3 font-mono text-[11px] overflow-x-auto text-emerald-300">
-          <div className="flex items-center justify-between pb-2 mb-2 border-b border-border/50 text-[10px] text-text-muted">
-            <span>CORE LOGIC KERNEL</span>
-            <button
-              onClick={handleCopyCode}
-              className="flex items-center gap-1 text-text-muted hover:text-text-primary"
-            >
-              {copiedCode ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-              <span>{copiedCode ? 'Copied' : 'Copy'}</span>
-            </button>
-          </div>
-          <pre className="text-text-primary leading-relaxed font-mono whitespace-pre-wrap">
+      {/* Code drawer */}
+      <motion.div
+        initial={false}
+        animate={{ height: showCode ? 'auto' : 0, opacity: showCode ? 1 : 0 }}
+        transition={{ duration: 0.35, ease: EASE }}
+        style={{ overflow: 'hidden' }}
+      >
+        <div style={{
+          background: '#090b10', border: '1px solid var(--border)',
+          padding: '12px 14px', fontFamily: '"JetBrains Mono", monospace',
+          fontSize: '11px', position: 'relative', marginBottom: 12,
+        }}>
+          <button
+            onClick={handleCopy}
+            style={{
+              position: 'absolute', top: 8, right: 8, background: 'transparent',
+              border: 'none', cursor: 'pointer', color: 'var(--text-muted)',
+              display: 'flex', alignItems: 'center', gap: 4, fontSize: '10px',
+            }}
+          >
+            {copied ? <Check style={{ width: 12, height: 12, color: 'var(--accent)' }} /> : <Copy style={{ width: 12, height: 12 }} />}
+          </button>
+          <pre style={{ color: '#7dd3a8', margin: 0, whiteSpace: 'pre-wrap', lineHeight: 1.7 }}>
             {project.codeSnippet}
           </pre>
         </div>
-      )}
+      </motion.div>
 
-      {/* Metrics Row */}
-      {project.metrics && project.metrics.length > 0 && (
-        <div className="grid grid-cols-2 gap-2 my-3 p-2 bg-[#0b0c11] border border-border/50 font-mono text-[11px]">
-          {project.metrics.map((m, idx) => (
-            <div key={idx} className="flex flex-col">
-              <span className="text-text-muted text-[9px] uppercase tracking-wider">{m.label}</span>
-              <span className="text-text-primary font-semibold">{m.value}</span>
+      {/* Metrics */}
+      {project.metrics && (
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)',
+          gap: 8, marginBottom: 16,
+        }}>
+          {project.metrics.map((m) => (
+            <div key={m.label} style={{
+              padding: '8px 10px',
+              background: 'rgba(255,255,255,0.02)',
+              border: '1px solid var(--border)',
+            }}>
+              <div style={{ fontSize: '9px', fontFamily: '"JetBrains Mono", monospace', color: 'var(--text-muted)', letterSpacing: '0.08em', marginBottom: 3 }}>
+                {m.label.toUpperCase()}
+              </div>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                {m.value}
+              </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Tech Stack Tags */}
-      <div className="flex flex-wrap gap-1.5 mt-2 pt-3 border-t border-border/40 font-mono text-[11px]">
+      {/* Tags */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, paddingTop: 14, borderTop: '1px solid var(--border)' }}>
         {project.tags.map((tag) => (
-          <span
+          <motion.span
             key={tag}
-            className="px-2 py-0.5 bg-[#12151f] text-[#8690a6] border border-border/60 hover:border-accent/40 hover:text-text-primary transition-colors"
+            whileHover={{ borderColor: 'var(--accent)', color: 'var(--text-primary)' }}
+            transition={{ duration: 0.15 }}
+            style={{
+              padding: '3px 9px',
+              fontSize: '11px',
+              fontFamily: '"JetBrains Mono", monospace',
+              color: 'var(--text-muted)',
+              border: '1px solid var(--border)',
+              background: 'rgba(255,255,255,0.02)',
+            }}
           >
             {tag}
-          </span>
+          </motion.span>
         ))}
       </div>
-    </article>
+    </motion.article>
   );
 };
